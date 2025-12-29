@@ -71,6 +71,7 @@ export function AccountList({ accounts, onAdd, onUpdate, onDelete }: AccountList
             {editingAccount ? 'Edit Account' : 'New Account'}
           </h4>
           <AccountForm
+            key={editingAccount?.id ?? 'new'}
             account={editingAccount}
             onSave={handleSave}
             onCancel={handleCancel}

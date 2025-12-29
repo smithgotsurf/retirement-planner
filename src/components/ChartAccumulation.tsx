@@ -35,6 +35,44 @@ function formatTooltipValue(value: number): string {
   }).format(value);
 }
 
+interface TooltipPayload {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: number;
+  accounts: Account[];
+}
+
+function CustomTooltip({ active, payload, label, accounts }: CustomTooltipProps) {
+  if (!active || !payload) return null;
+
+  const total = payload.reduce((sum, entry) => sum + entry.value, 0);
+
+  return (
+    <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+      <p className="font-medium text-gray-900 dark:text-white mb-2">Age {label}</p>
+      {[...payload].reverse().map((entry, index) => {
+        const account = accounts.find(a => a.id === entry.name);
+        return (
+          <div key={index} className="flex justify-between gap-4 text-sm">
+            <span style={{ color: entry.color }}>{account?.name || entry.name}:</span>
+            <span className="font-medium">{formatTooltipValue(entry.value)}</span>
+          </div>
+        );
+      })}
+      <div className="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2 flex justify-between gap-4 text-sm font-semibold text-gray-900 dark:text-white">
+        <span>Total:</span>
+        <span>{formatTooltipValue(total)}</span>
+      </div>
+    </div>
+  );
+}
+
 export function ChartAccumulation({ accounts, result, isDarkMode = false }: ChartAccumulationProps) {
   // Colors based on dark mode
   const gridColor = isDarkMode ? '#374151' : '#e5e7eb';
@@ -60,35 +98,6 @@ export function ChartAccumulation({ accounts, result, isDarkMode = false }: Char
     return order[getTaxTreatment(a.type)] - order[getTaxTreatment(b.type)];
   });
 
-  const CustomTooltip = ({ active, payload, label }: {
-    active?: boolean;
-    payload?: Array<{ name: string; value: number; color: string }>;
-    label?: number;
-  }) => {
-    if (!active || !payload) return null;
-
-    const total = payload.reduce((sum, entry) => sum + entry.value, 0);
-
-    return (
-      <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
-        <p className="font-medium text-gray-900 dark:text-white mb-2">Age {label}</p>
-        {payload.reverse().map((entry, index) => {
-          const account = accounts.find(a => a.id === entry.name);
-          return (
-            <div key={index} className="flex justify-between gap-4 text-sm">
-              <span style={{ color: entry.color }}>{account?.name || entry.name}:</span>
-              <span className="font-medium">{formatTooltipValue(entry.value)}</span>
-            </div>
-          );
-        })}
-        <div className="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2 flex justify-between gap-4 text-sm font-semibold text-gray-900 dark:text-white">
-          <span>Total:</span>
-          <span>{formatTooltipValue(total)}</span>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="w-full h-80">
       <ResponsiveContainer width="100%" height="100%">
@@ -107,7 +116,7 @@ export function ChartAccumulation({ accounts, result, isDarkMode = false }: Char
             stroke={tickLineColor}
             width={60}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip accounts={accounts} />} />
           <Legend
             wrapperStyle={{ paddingTop: '10px' }}
             formatter={(value) => {

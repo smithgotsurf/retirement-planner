@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Account, AccountType, getAccountTypeLabel, is401k } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -18,22 +18,17 @@ const defaultAccount: Omit<Account, 'id'> = {
 };
 
 export function AccountForm({ account, onSave, onCancel }: AccountFormProps) {
+  // Initialize form data from account prop (component is re-mounted with key when account changes)
   const [formData, setFormData] = useState<Omit<Account, 'id'>>(() => {
     if (account) {
-      const { id: _, ...rest } = account;
+      const { id: _id, ...rest } = account;
+      void _id; // Explicitly mark as intentionally unused
       return rest;
     }
     return { ...defaultAccount };
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (account) {
-      const { id: _, ...rest } = account;
-      setFormData(rest);
-    }
-  }, [account]);
 
   const handleChange = (field: keyof Omit<Account, 'id'>, value: string | number) => {
     setFormData(prev => ({

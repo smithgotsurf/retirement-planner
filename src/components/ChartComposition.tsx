@@ -30,12 +30,73 @@ const TAX_TREATMENT_LABELS: Record<TaxTreatment, string> = {
   hsa: 'HSA',
 };
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; payload: { color: string } }>;
+  total: number;
+}
+
+function CustomTooltip({ active, payload, total }: CustomTooltipProps) {
+  if (!active || !payload || !payload[0]) return null;
+
+  const data = payload[0];
+  const percentage = ((data.value / total) * 100).toFixed(1);
+
+  return (
+    <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+      <div className="flex items-center gap-2">
+        <div
+          className="w-3 h-3 rounded-full"
+          style={{ backgroundColor: data.payload.color }}
+        />
+        <span className="font-medium text-gray-900 dark:text-white">{data.name}</span>
+      </div>
+      <div className="mt-1 text-sm">
+        <div className="text-gray-900 dark:text-white">{formatCurrency(data.value)}</div>
+        <div className="text-gray-500 dark:text-gray-400">{percentage}% of portfolio</div>
+      </div>
+    </div>
+  );
+}
+
+interface LabelProps {
+  cx?: number;
+  cy?: number;
+  midAngle?: number;
+  innerRadius?: number;
+  outerRadius?: number;
+  percent?: number;
+}
+
+function renderCustomizedLabel(props: LabelProps) {
+  const { cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0 } = props;
+  if (percent < 0.05) return null; // Don't show labels for small slices
+
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="white"
+      textAnchor="middle"
+      dominantBaseline="central"
+      className="text-xs font-medium"
+    >
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+}
+
 export function ChartComposition({ accounts, result, isDarkMode = false }: ChartCompositionProps) {
   // Colors based on dark mode
   const labelColor = isDarkMode ? '#9ca3af' : '#374151';
   // Create data by tax treatment
   const taxTreatmentData = Object.entries(result.breakdownByTaxTreatment)
-    .filter(([_, value]) => value > 0)
+    .filter(([treatment]) => result.breakdownByTaxTreatment[treatment as TaxTreatment] > 0)
     .map(([treatment, value]) => ({
       name: TAX_TREATMENT_LABELS[treatment as TaxTreatment],
       value,
@@ -52,62 +113,6 @@ export function ChartComposition({ accounts, result, isDarkMode = false }: Chart
     .filter(d => d.value > 0);
 
   const total = result.totalAtRetirement;
-
-  const CustomTooltip = ({ active, payload }: {
-    active?: boolean;
-    payload?: Array<{ name: string; value: number; payload: { color: string } }>;
-  }) => {
-    if (!active || !payload || !payload[0]) return null;
-
-    const data = payload[0];
-    const percentage = ((data.value / total) * 100).toFixed(1);
-
-    return (
-      <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
-        <div className="flex items-center gap-2">
-          <div
-            className="w-3 h-3 rounded-full"
-            style={{ backgroundColor: data.payload.color }}
-          />
-          <span className="font-medium text-gray-900 dark:text-white">{data.name}</span>
-        </div>
-        <div className="mt-1 text-sm">
-          <div className="text-gray-900 dark:text-white">{formatCurrency(data.value)}</div>
-          <div className="text-gray-500 dark:text-gray-400">{percentage}% of portfolio</div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderCustomizedLabel = (props: {
-    cx?: number;
-    cy?: number;
-    midAngle?: number;
-    innerRadius?: number;
-    outerRadius?: number;
-    percent?: number;
-  }) => {
-    const { cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0 } = props;
-    if (percent < 0.05) return null; // Don't show labels for small slices
-
-    const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    return (
-      <text
-        x={x}
-        y={y}
-        fill="white"
-        textAnchor="middle"
-        dominantBaseline="central"
-        className="text-xs font-medium"
-      >
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
-    );
-  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -134,7 +139,7 @@ export function ChartComposition({ accounts, result, isDarkMode = false }: Chart
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip total={total} />} />
               <Legend
                 wrapperStyle={{ fontSize: '12px' }}
                 formatter={(value) => <span style={{ color: labelColor }}>{value}</span>}
@@ -167,7 +172,7 @@ export function ChartComposition({ accounts, result, isDarkMode = false }: Chart
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip total={total} />} />
               <Legend
                 wrapperStyle={{ fontSize: '12px' }}
                 formatter={(value) => <span style={{ color: labelColor }}>{value}</span>}

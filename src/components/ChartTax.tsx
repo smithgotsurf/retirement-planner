@@ -35,6 +35,50 @@ function formatTooltipValue(value: number): string {
   }).format(value);
 }
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string }>;
+  label?: number;
+  result: RetirementResult;
+}
+
+function CustomTooltip({ active, payload, label, result }: CustomTooltipProps) {
+  if (!active || !payload) return null;
+
+  const yearData = result.yearlyWithdrawals.find(y => y.age === label);
+  if (!yearData) return null;
+
+  const effectiveRate = yearData.grossIncome > 0
+    ? ((yearData.totalTax / yearData.grossIncome) * 100).toFixed(1)
+    : '0.0';
+
+  return (
+    <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+      <p className="font-medium text-gray-900 dark:text-white mb-2">Age {label}</p>
+      <div className="space-y-1 text-sm">
+        <div className="flex justify-between gap-4">
+          <span className="text-blue-600 dark:text-blue-400">Federal Tax:</span>
+          <span className="font-medium text-gray-900 dark:text-white">{formatTooltipValue(yearData.federalTax)}</span>
+        </div>
+        <div className="flex justify-between gap-4">
+          <span className="text-purple-600 dark:text-purple-400">State Tax:</span>
+          <span className="font-medium text-gray-900 dark:text-white">{formatTooltipValue(yearData.stateTax)}</span>
+        </div>
+        <div className="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
+          <div className="flex justify-between gap-4 font-semibold">
+            <span style={{ color: CHART_COLORS.tax }}>Total Tax:</span>
+            <span className="text-gray-900 dark:text-white">{formatTooltipValue(yearData.totalTax)}</span>
+          </div>
+          <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-400 mt-1">
+            <span>Effective Rate:</span>
+            <span>{effectiveRate}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ChartTax({ result, isDarkMode = false }: ChartTaxProps) {
   // Colors based on dark mode
   const gridColor = isDarkMode ? '#374151' : '#e5e7eb';
@@ -54,47 +98,6 @@ export function ChartTax({ result, isDarkMode = false }: ChartTaxProps) {
       effectiveRate,
     };
   });
-
-  const CustomTooltip = ({ active, payload, label }: {
-    active?: boolean;
-    payload?: Array<{ name: string; value: number; color: string }>;
-    label?: number;
-  }) => {
-    if (!active || !payload) return null;
-
-    const yearData = result.yearlyWithdrawals.find(y => y.age === label);
-    if (!yearData) return null;
-
-    const effectiveRate = yearData.grossIncome > 0
-      ? ((yearData.totalTax / yearData.grossIncome) * 100).toFixed(1)
-      : '0.0';
-
-    return (
-      <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
-        <p className="font-medium text-gray-900 dark:text-white mb-2">Age {label}</p>
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between gap-4">
-            <span className="text-blue-600 dark:text-blue-400">Federal Tax:</span>
-            <span className="font-medium text-gray-900 dark:text-white">{formatTooltipValue(yearData.federalTax)}</span>
-          </div>
-          <div className="flex justify-between gap-4">
-            <span className="text-purple-600 dark:text-purple-400">State Tax:</span>
-            <span className="font-medium text-gray-900 dark:text-white">{formatTooltipValue(yearData.stateTax)}</span>
-          </div>
-          <div className="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2">
-            <div className="flex justify-between gap-4 font-semibold">
-              <span style={{ color: CHART_COLORS.tax }}>Total Tax:</span>
-              <span className="text-gray-900 dark:text-white">{formatTooltipValue(yearData.totalTax)}</span>
-            </div>
-            <div className="flex justify-between gap-4 text-gray-600 dark:text-gray-400 mt-1">
-              <span>Effective Rate:</span>
-              <span>{effectiveRate}%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="w-full h-80">
@@ -125,7 +128,7 @@ export function ChartTax({ result, isDarkMode = false }: ChartTaxProps) {
             domain={[0, 40]}
             width={50}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip result={result} />} />
           <Legend
             wrapperStyle={{ paddingTop: '10px' }}
             formatter={(value) => <span style={{ color: tickColor }}>{value}</span>}

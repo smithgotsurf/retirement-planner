@@ -36,6 +36,50 @@ function formatTooltipValue(value: number): string {
   }).format(value);
 }
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string; dataKey: string }>;
+  label?: number;
+  result: RetirementResult;
+}
+
+function CustomTooltip({ active, payload, label, result }: CustomTooltipProps) {
+  if (!active || !payload) return null;
+
+  const yearData = result.yearlyWithdrawals.find(y => y.age === label);
+  if (!yearData) return null;
+
+  return (
+    <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+      <p className="font-medium text-gray-900 dark:text-white mb-2">Age {label}</p>
+      <div className="space-y-1 text-sm">
+        <div className="flex justify-between gap-4">
+          <span style={{ color: CHART_COLORS.pretax }}>Withdrawals:</span>
+          <span className="font-medium text-gray-900 dark:text-white">{formatTooltipValue(yearData.totalWithdrawal)}</span>
+        </div>
+        {yearData.socialSecurityIncome > 0 && (
+          <div className="flex justify-between gap-4">
+            <span style={{ color: CHART_COLORS.socialSecurity }}>Social Security:</span>
+            <span className="font-medium text-gray-900 dark:text-white">{formatTooltipValue(yearData.socialSecurityIncome)}</span>
+          </div>
+        )}
+        <div className="flex justify-between gap-4 border-t border-gray-200 dark:border-gray-600 pt-1 mt-1">
+          <span className="text-gray-600 dark:text-gray-400">Gross Income:</span>
+          <span className="font-medium text-gray-900 dark:text-white">{formatTooltipValue(yearData.grossIncome)}</span>
+        </div>
+        <div className="flex justify-between gap-4">
+          <span style={{ color: CHART_COLORS.tax }}>Taxes:</span>
+          <span className="font-medium text-red-600 dark:text-red-400">-{formatTooltipValue(yearData.totalTax)}</span>
+        </div>
+        <div className="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2 flex justify-between gap-4 font-semibold">
+          <span style={{ color: CHART_COLORS.spending }}>After-Tax Income:</span>
+          <span className="text-gray-900 dark:text-white">{formatTooltipValue(yearData.afterTaxIncome)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ChartIncome({ result, isDarkMode = false }: ChartIncomeProps) {
   // Colors based on dark mode
   const gridColor = isDarkMode ? '#374151' : '#e5e7eb';
@@ -52,47 +96,6 @@ export function ChartIncome({ result, isDarkMode = false }: ChartIncomeProps) {
     gross: year.grossIncome,
     // For the net visualization, we'll show after-tax as a line
   }));
-
-  const CustomTooltip = ({ active, payload, label }: {
-    active?: boolean;
-    payload?: Array<{ name: string; value: number; color: string; dataKey: string }>;
-    label?: number;
-  }) => {
-    if (!active || !payload) return null;
-
-    const yearData = result.yearlyWithdrawals.find(y => y.age === label);
-    if (!yearData) return null;
-
-    return (
-      <div className="bg-white dark:bg-gray-800 p-3 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
-        <p className="font-medium text-gray-900 dark:text-white mb-2">Age {label}</p>
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between gap-4">
-            <span style={{ color: CHART_COLORS.pretax }}>Withdrawals:</span>
-            <span className="font-medium text-gray-900 dark:text-white">{formatTooltipValue(yearData.totalWithdrawal)}</span>
-          </div>
-          {yearData.socialSecurityIncome > 0 && (
-            <div className="flex justify-between gap-4">
-              <span style={{ color: CHART_COLORS.socialSecurity }}>Social Security:</span>
-              <span className="font-medium text-gray-900 dark:text-white">{formatTooltipValue(yearData.socialSecurityIncome)}</span>
-            </div>
-          )}
-          <div className="flex justify-between gap-4 border-t border-gray-200 dark:border-gray-600 pt-1 mt-1">
-            <span className="text-gray-600 dark:text-gray-400">Gross Income:</span>
-            <span className="font-medium text-gray-900 dark:text-white">{formatTooltipValue(yearData.grossIncome)}</span>
-          </div>
-          <div className="flex justify-between gap-4">
-            <span style={{ color: CHART_COLORS.tax }}>Taxes:</span>
-            <span className="font-medium text-red-600 dark:text-red-400">-{formatTooltipValue(yearData.totalTax)}</span>
-          </div>
-          <div className="border-t border-gray-200 dark:border-gray-600 mt-2 pt-2 flex justify-between gap-4 font-semibold">
-            <span style={{ color: CHART_COLORS.spending }}>After-Tax Income:</span>
-            <span className="text-gray-900 dark:text-white">{formatTooltipValue(yearData.afterTaxIncome)}</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="w-full h-80">
@@ -112,7 +115,7 @@ export function ChartIncome({ result, isDarkMode = false }: ChartIncomeProps) {
             stroke={tickLineColor}
             width={60}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<CustomTooltip result={result} />} />
           <Legend
             wrapperStyle={{ paddingTop: '10px' }}
             formatter={(value) => <span style={{ color: tickColor }}>{value}</span>}
