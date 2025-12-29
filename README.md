@@ -135,6 +135,7 @@ src/
 │   ├── DataTableWithdrawal.tsx   # Year-by-year withdrawal data
 │   ├── Layout.tsx                # App layout with header/footer
 │   ├── MethodologyPanel.tsx      # Formulas & assumptions reference
+│   ├── NumberInput.tsx           # String to number conversion
 │   ├── ProfileForm.tsx           # Personal information form
 │   └── SummaryCards.tsx          # Expandable key metrics display
 ├── hooks/
