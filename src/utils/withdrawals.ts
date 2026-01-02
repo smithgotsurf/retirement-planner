@@ -115,9 +115,12 @@ export function calculateWithdrawals(
     const socialSecurityIncome = governmentBenefits; // Keep variable name for compatibility
 
     // Calculate minimum required withdrawals (RMD/RRIF) for each traditional account
+    // Use country config for traditional detection if available
+    const isTraditionalAccount = (type: string) =>
+      countryConfig ? countryConfig.isTraditionalAccount(type) : isTraditional(type as any);
     let totalMinimumWithdrawal = 0;
     accountStates
-      .filter(acc => isTraditional(acc.type))
+      .filter(acc => isTraditionalAccount(acc.type))
       .forEach(acc => {
         const minWithdrawal = calculateRMD(age, acc.balance, acc.type, countryConfig);
         totalMinimumWithdrawal += minWithdrawal;
@@ -132,7 +135,8 @@ export function calculateWithdrawals(
       socialSecurityIncome,
       profile,
       accountDepletionAges,
-      age
+      age,
+      countryConfig
     );
 
     // Apply investment returns to remaining balances
@@ -254,7 +258,8 @@ function performTaxOptimizedWithdrawal(
   socialSecurityIncome: number,
   profile: Profile,
   accountDepletionAges: Record<string, number | null>,
-  age: number
+  age: number,
+  countryConfig?: CountryConfig
 ): WithdrawalResult {
   const result: WithdrawalResult = {
     total: 0,
@@ -273,8 +278,10 @@ function performTaxOptimizedWithdrawal(
   // How much do we need after Social Security?
   let remainingNeed = Math.max(0, targetSpending - socialSecurityIncome);
 
-  // Get account groups
-  const traditionalAccounts = accountStates.filter(acc => isTraditional(acc.type));
+  // Get account groups - use country config for traditional detection if available
+  const isTraditionalAccount = (type: string) =>
+    countryConfig ? countryConfig.isTraditionalAccount(type) : isTraditional(type as any);
+  const traditionalAccounts = accountStates.filter(acc => isTraditionalAccount(acc.type));
   const rothAccounts = accountStates.filter(acc =>
     getTaxTreatment(acc.type) === 'roth'
   );
