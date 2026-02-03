@@ -50,6 +50,11 @@ This is a React retirement planning calculator that projects portfolio growth an
 - Validation enforces RMD age constraints (can't delay past age 73 US, 71 Canada)
 - Early withdrawals trigger 10% penalty for US traditional accounts before age 59.5
 
+**Known Simplifications (Penalty Calculations):**
+- Roth contributions vs earnings not tracked separately. In reality, Roth contributions can be withdrawn penalty-free at any time; only earnings face the 10% penalty before age 59.5.
+- HSA non-medical penalty (20% before age 65) not implemented. HSA withdrawals are modeled as penalty-free.
+- 5-year rule for Roth accounts not tracked. Account opening dates are not stored.
+
 ### Tailwind v4
 
 Uses `@tailwindcss/vite` plugin. Dark mode requires this CSS directive:

@@ -56,7 +56,12 @@ export function NumberInput({
 
   const handleBlur = () => {
     // On blur, parse and commit the value
-    const actualValue = toActualValue(localValue);
+    let actualValue = toActualValue(localValue);
+
+    // Round to nearest integer when no decimals requested (for age inputs, etc.)
+    if (decimals === 0 && !isPercentage) {
+      actualValue = Math.round(actualValue);
+    }
 
     // Apply min/max constraints
     let constrainedValue = actualValue;
